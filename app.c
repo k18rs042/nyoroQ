@@ -15,8 +15,13 @@
 #define SPEED_DEFAULT	35			//デフォルト速度
 #define SPEED_LOW		20			//高速速度
 #define SPEED_HIGH		80			//低速速度
-#define SPEED_TURNRIGHT   50       //左カーブ用
-#define SPEED_TURNLEFT  50        //右カーブ用
+
+
+#define SPEED_TURN_LOW_S   30      //軽微なカーブ  
+#define SPEED_TURN_LOW_L   40     //S=>small L=>LARGE
+
+#define SPEED_TURN_HIGH_S   5     //強引なカーブ
+#define SPEED_TURN_HIGH_L   70     //S=>small L=>LARGE 
 
 
 
@@ -43,17 +48,23 @@ void main_task(intptr_t unused) {
 				//デフォルト速度で直進
                 forward(left_motor, right_motor, SPEED_DEFAULT);
                 break;
-            case BLACK:		//赤を検出
-				//高速速度で直進
-                turnRight(left_motor, right_motor, SPEED_DEFAULT,SPEED_TURNLEFT);
+            case BLACK:		//黒を検出
+				//右に曲がる
+                turn(left_motor, right_motor, SPEED_TURN_HIGH_L,SPEED_TURN_HIGH_S);
+                break;
+            case NEARBLACK:		//黒に近い色を検出
+				//右に曲がる
+                turn(left_motor, right_motor, SPEED_TURN_LOW_L,SPEED_TURN_LOW_S);
+                break;
+            case WHITE:		//白を検出
+				//右に曲がる
+                turn(left_motor, right_motor, SPEED_TURN_HIGH_S,SPEED_TURN_HIGH_L);
+                break;
+            case NEARWHITE://白に近い色を検知
+                turn(left_motor, right_motor, SPEED_TURN_LOW_S,SPEED_TURN_LOW_L);
                 break;
             case RED:
-                //モータ停止
                 forward(left_motor, right_motor, SPEED_DEFAULT);
-                break;
-            case WHITE:		//赤を検出
-				//高速速度で直進
-                turnLeft(left_motor, right_motor, SPEED_DEFAULT,SPEED_TURNRIGHT);
                 break;
             default :
                 stop(left_motor, right_motor);
@@ -67,3 +78,4 @@ void main_task(intptr_t unused) {
 	stop(left_motor, right_motor);
 	ext_tsk();
 }
+

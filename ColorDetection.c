@@ -1,61 +1,38 @@
-// app.c
-#include "ev3api.h"
-#include "app.h"
-#include "RunControl.h"
+//ColorDetection.c
 #include "ColorDetection.h"
+#include "ev3api.h"
 
-#define DEBUG
+#define REFLECT_WHITE	95      //白検出用反射光の閾値
+#define REFLECT_BLACK	35      //黒検出用反射光の閾値
+#define REFLECT_RED		48      //赤検出用反射光の閾値
 
-#ifdef DEBUG
-#define _debug(x) (x)
-#else
-#define _debug(x)
-#endif
+int midpoint = (REFLECT_WHITE - REFLECT_BLACK) / 2 + REFLECT_BLACK; //62.5
 
-#define SPEED_DEFAULT	50			//デフォルト速度
-#define SPEED_LOW		20			//高速速度
-#define SPEED_HIGH		80			//低速速度
+//色検出
+int DetectionColor(int color_sensor){
 
-//モータ・センサのポート
-const int color_sensor = EV3_PORT_1, left_motor = EV3_PORT_A, right_motor = EV3_PORT_B;
-
-void main_task(intptr_t unused) {
-
-	static int rotate = 0;			//モータ回転角
-
-	//モータ・センサのポート設定
-    ev3_sensor_config(color_sensor, COLOR_SENSOR);
-    ev3_motor_config(left_motor, LARGE_MOTOR);
-    ev3_motor_config(right_motor, LARGE_MOTOR);
+    int reflect = 0;            //反射光の値
+    int color = 0;              //検出色
     
-    syslog(LOG_NOTICE, "#### motor control start");
-    while(1) {
 
-		//検出した色ごとにモータ速度を変化
-        switch(DetectionColor(color_sensor)){
-            case WHITE:		//白を検出
-				//デフォルト速度で直進
-                forward(left_motor, right_motor, SPEED_DEFAULT);
-                break;
-            case BLACK:		//黒を検出
-				//低速速度で直進
-                forward(left_motor, right_motor, SPEED_LOW);
-                break;
-            case RED:		//赤を検出
-				//高速速度で直進
-                forward(left_motor, right_motor, SPEED_HIGH);
-                break;
-            default:
-                //モータ停止
-                stop(left_motor, right_motor);
-                break;
-        }
+    //カラーセンサで反射光の強さを測定
+    reflect = ev3_color_sensor_get_reflect(color_sensor);
+    printf("reflect = %d\n", reflect);
+    
 
-		tslp_tsk(100000); /* 100msec */
+
+    if(midpoint-8 < reflect && reflect < midpoint+8){
+        color = GLAY;
+    }else if(reflect >= 95){
+        color = WHITE;
+    }else if(reflect <= 30){
+        color = BLACK;
+    }else if(midpoint+8 < reflect){
+        color = NEARWHITE;//白
+    }else if(reflect < midpoint-8){
+        color = NEARBLACK;
+    }else{
+        color = RED;
     }
-
-    //モータ停止
-	stop(left_motor, right_motor);
-	ext_tsk();
+    return color;
 }
-
